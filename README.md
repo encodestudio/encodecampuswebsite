@@ -112,9 +112,10 @@ Set `VITE_API_BASE` at build time to point at a deployed API (defaults to `/api`
 
 ## 3. Brand assets
 
-`frontend/public/` — `encodecampus-logo.png`, `encodecampus-icon.png`, `favicon.ico`.
-The header/footer use an inline SVG recreation of the brand mark
-(`src/components/Logo.jsx`) so it stays crisp and theme-aware.
+- `frontend/src/assets/encodecampus-logo.png` — official logo lockup, used in the
+  header (full colour) and footer (reversed to white via CSS filter) by
+  `src/components/Logo.jsx`.
+- `frontend/public/` — `encodecampus-icon.png` and `favicon.ico` for the browser tab.
 
 ---
 
