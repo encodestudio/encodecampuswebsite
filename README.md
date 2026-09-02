@@ -119,7 +119,24 @@ Set `VITE_API_BASE` at build time to point at a deployed API (defaults to `/api`
 
 ---
 
-## 4. Notes
+## 4. Deployment
+
+Production deploy to a single AWS EC2 box (nginx + gunicorn + Django + MySQL,
+serving `https://encodecampus.encodestudio.in`) is documented in
+[`deploy/DEPLOY.md`](deploy/DEPLOY.md), with:
+
+- `deploy/provision.sh` — one-time server setup.
+- `deploy/deploy.sh` — pull + build + migrate + restart on each release.
+- `deploy/gunicorn.service`, `deploy/nginx-encodecampus.conf`,
+  `deploy/encodecampus.env.example`.
+
+`settings.py` turns on HSTS, secure cookies, SSL redirect and the
+forwarded-proto header automatically whenever `DJANGO_DEBUG=False`, and
+serves collected static via WhiteNoise.
+
+---
+
+## 5. Notes
 
 - CORS is restricted to the dev frontend origin in `settings.py` /
   `CORS_ALLOWED_ORIGINS`; add your production origin there.

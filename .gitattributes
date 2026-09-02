@@ -1,0 +1,11 @@
+# Normalize line endings. Shell scripts and configs MUST be LF so they run
+# correctly on the Linux server regardless of who commits from Windows.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.jpg binary
+*.psd binary
+
+*.sh text eol=lf
+deploy/** text eol=lf

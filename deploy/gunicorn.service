@@ -1,0 +1,32 @@
+# /etc/systemd/system/gunicorn.service
+[Unit]
+Description=Encode Campus — gunicorn (Django)
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=notify
+User=encodecampus
+Group=encodecampus
+WorkingDirectory=/srv/encodecampus/backend
+EnvironmentFile=/etc/encodecampus.env
+ExecStart=/srv/encodecampus/backend/venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8001 \
+    --timeout 60 \
+    --access-logfile - \
+    --error-logfile - \
+    encodecampus.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=3
+KillMode=mixed
+
+# hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
