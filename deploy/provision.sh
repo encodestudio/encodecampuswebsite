@@ -9,6 +9,15 @@ APP_USER=encodecampus
 DB_NAME=EncodeCampusWebsite
 DB_USER=encodecampus
 
+echo ">>> swap (guards the Vite build against OOM on 2 GiB boxes)"
+if [ ! -f /swapfile ] && [ "$(free -m | awk '/^Mem:/{print $2}')" -lt 4000 ]; then
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
 echo ">>> apt packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
