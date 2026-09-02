@@ -51,13 +51,14 @@ export function LinkArrow({ to, children }) {
   );
 }
 
-export function Reveal({ children, as: Tag = "div", delay = 0, className = "", style }) {
+export function Reveal({ children, as: Tag = "div", delay = 0, className = "", style, ...rest }) {
   const [ref, visible] = useReveal();
   return (
     <Tag
       ref={ref}
       className={`reveal ${visible ? "is-visible" : ""} ${className}`.trim()}
       style={{ transitionDelay: `${delay}ms`, ...style }}
+      {...rest}
     >
       {children}
     </Tag>
