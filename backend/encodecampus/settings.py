@@ -131,6 +131,7 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 CONTACT_FORM_TO = env_list("CONTACT_FORM_TO", "shivam@encodestudio.in")
 CONTACT_FORM_CC = env_list("CONTACT_FORM_CC", "encodestudio.in@gmail.com")
+CUSTOMER_ACK_FROM = os.getenv("CUSTOMER_ACK_FROM", "shivam@encodestudio.in")
 
 # ---------------------------------------------------------------------------
 # Production hardening — active whenever DEBUG is off. The app runs behind

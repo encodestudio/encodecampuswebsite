@@ -32,6 +32,7 @@ class DemoRequestApiTests(TestCase):
         CONTACT_FORM_TO=["shivam@encodestudio.in"],
         CONTACT_FORM_CC=["encodestudio.in@gmail.com"],
         DEFAULT_FROM_EMAIL="web@encodecampus.encodestudio.in",
+        CUSTOMER_ACK_FROM="shivam@encodestudio.in",
     )
     def test_create_demo_request_and_segment(self):
         payload = {
@@ -48,13 +49,18 @@ class DemoRequestApiTests(TestCase):
         self.assertEqual(res.status_code, 201)
         obj = DemoRequest.objects.get()
         self.assertEqual(obj.segment, "high_value")
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 2)
         sent = mail.outbox[0]
         self.assertEqual(sent.to, ["shivam@encodestudio.in"])
         self.assertEqual(sent.cc, ["encodestudio.in@gmail.com"])
         self.assertEqual(sent.reply_to, ["principal@example.com"])
         self.assertIn("Test School", sent.subject)
         self.assertIn("A Principal", sent.body)
+        ack = mail.outbox[1]
+        self.assertEqual(ack.from_email, "shivam@encodestudio.in")
+        self.assertEqual(ack.to, ["principal@example.com"])
+        self.assertIn("demo request", ack.subject)
+        self.assertIn("Thanks for requesting", ack.body)
 
     def test_calculate_endpoint(self):
         res = self.client.get(
@@ -69,6 +75,7 @@ class DemoRequestApiTests(TestCase):
     CONTACT_FORM_TO=["shivam@encodestudio.in"],
     CONTACT_FORM_CC=["encodestudio.in@gmail.com"],
     DEFAULT_FROM_EMAIL="web@encodecampus.encodestudio.in",
+    CUSTOMER_ACK_FROM="shivam@encodestudio.in",
 )
 class ContactMessageApiTests(TestCase):
     def setUp(self):
@@ -88,10 +95,14 @@ class ContactMessageApiTests(TestCase):
 
         self.assertEqual(res.status_code, 201)
         self.assertEqual(ContactMessage.objects.count(), 1)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 2)
         sent = mail.outbox[0]
         self.assertEqual(sent.to, ["shivam@encodestudio.in"])
         self.assertEqual(sent.cc, ["encodestudio.in@gmail.com"])
         self.assertEqual(sent.reply_to, ["admin@example.com"])
         self.assertIn("Pricing question", sent.subject)
         self.assertIn("Please share implementation details.", sent.body)
+        ack = mail.outbox[1]
+        self.assertEqual(ack.from_email, "shivam@encodestudio.in")
+        self.assertEqual(ack.to, ["admin@example.com"])
+        self.assertIn("received your Encode Campus message", ack.subject)

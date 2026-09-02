@@ -34,17 +34,41 @@ const EMPTY = {
 };
 
 export default function Demo() {
-  usePageMeta("Book a Demo", "See Encode Campus on your institution's data. Book a walkthrough with an education specialist.");
+  usePageMeta(
+    "Book a Demo",
+    "See Encode Campus on your institution's data. Book a walkthrough with an education specialist.",
+  );
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState("idle");
   const [errors, setErrors] = useState({});
+  const [statusMessage, setStatusMessage] = useState("");
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const validate = () => {
+    const next = {};
+    if (!form.name.trim()) next.name = "Please enter your name.";
+    if (!form.organisation.trim())
+      next.organisation = "Please enter your organisation.";
+    if (!form.phone.trim()) next.phone = "Please enter your phone number.";
+    if (!form.email.trim()) next.email = "Please enter your email.";
+    else if (!/^\S+@\S+\.\S+$/.test(form.email))
+      next.email = "Please enter a valid email.";
+    return next;
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setStatus("loading");
     setErrors({});
+    setStatusMessage("");
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
+      setStatus("error");
+      setStatusMessage("Please complete the required fields.");
+      return;
+    }
     try {
       await api.submitDemo({
         ...form,
@@ -55,6 +79,9 @@ export default function Demo() {
       setForm(EMPTY);
     } catch (err) {
       setErrors(err.data || {});
+      setStatusMessage(
+        "We could not send your request right now. Please try again in a moment.",
+      );
       setStatus("error");
     }
   };
@@ -63,12 +90,17 @@ export default function Demo() {
     return (
       <Section>
         <Reveal className="card form-done">
-          <div className="form-done__icon"><Icon name="check" size={26} /></div>
+          <div className="form-done__icon">
+            <Icon name="check" size={26} />
+          </div>
           <h1>Thanks — we've got your request.</h1>
           <p className="muted">
-            An education specialist will be in touch shortly to schedule your walkthrough.
+            An acknowledgement email has been sent to your inbox. An education
+            specialist will be in touch shortly to schedule your walkthrough.
           </p>
-          <Link to="/" className="link-arrow">Back to home <span className="arrow">→</span></Link>
+          <Link to="/" className="link-arrow">
+            Back to home <span className="arrow">→</span>
+          </Link>
         </Reveal>
       </Section>
     );
@@ -84,30 +116,57 @@ export default function Demo() {
           </p>
           <ul className="ticks">
             {BULLETS.map((b) => (
-              <li key={b}><Icon name="check" size={18} /> {b}</li>
+              <li key={b}>
+                <Icon name="check" size={18} /> {b}
+              </li>
             ))}
           </ul>
         </Reveal>
 
-        <Reveal as="form" className="card form-card" onSubmit={submit}>
+        <Reveal
+          as="form"
+          className="card form-card"
+          onSubmit={submit}
+          noValidate
+        >
           <div className="grid grid--2" style={{ gap: 0, columnGap: 18 }}>
-            <div className="field">
+            <div className={`field ${errors.name ? "field--error" : ""}`}>
               <label htmlFor="d-name">Name *</label>
-              <input id="d-name" required value={form.name} onChange={set("name")} />
+              <input id="d-name" value={form.name} onChange={set("name")} />
+              {errors.name && <span className="hint">{errors.name}</span>}
             </div>
-            <div className="field">
+            <div
+              className={`field ${errors.organisation ? "field--error" : ""}`}
+            >
               <label htmlFor="d-org">Organisation *</label>
-              <input id="d-org" required value={form.organisation} onChange={set("organisation")} />
+              <input
+                id="d-org"
+                value={form.organisation}
+                onChange={set("organisation")}
+              />
+              {errors.organisation && (
+                <span className="hint">{errors.organisation}</span>
+              )}
             </div>
             <div className="field">
               <label htmlFor="d-desig">Designation</label>
-              <input id="d-desig" value={form.designation} onChange={set("designation")} />
+              <input
+                id="d-desig"
+                value={form.designation}
+                onChange={set("designation")}
+              />
             </div>
             <div className="field">
               <label htmlFor="d-type">Institution type</label>
-              <select id="d-type" value={form.institution_type} onChange={set("institution_type")}>
+              <select
+                id="d-type"
+                value={form.institution_type}
+                onChange={set("institution_type")}
+              >
                 {INSTITUTIONS.map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
                 ))}
               </select>
             </div>
@@ -127,39 +186,63 @@ export default function Demo() {
             </div>
             <div className={`field ${errors.phone ? "field--error" : ""}`}>
               <label htmlFor="d-phone">Phone *</label>
-              <input id="d-phone" required value={form.phone} onChange={set("phone")} />
+              <input id="d-phone" value={form.phone} onChange={set("phone")} />
               {errors.phone && <span className="hint">{errors.phone}</span>}
             </div>
             <div className={`field ${errors.email ? "field--error" : ""}`}>
               <label htmlFor="d-email">Email *</label>
-              <input id="d-email" type="email" required value={form.email} onChange={set("email")} />
+              <input
+                id="d-email"
+                type="email"
+                value={form.email}
+                onChange={set("email")}
+              />
               {errors.email && <span className="hint">{errors.email}</span>}
             </div>
             <div className="field">
               <label htmlFor="d-sys">Current system</label>
-              <input id="d-sys" value={form.current_system} onChange={set("current_system")} />
+              <input
+                id="d-sys"
+                value={form.current_system}
+                onChange={set("current_system")}
+              />
             </div>
             <div className="field">
               <label htmlFor="d-chal">Primary challenge</label>
-              <input id="d-chal" value={form.primary_challenge} onChange={set("primary_challenge")} />
+              <input
+                id="d-chal"
+                value={form.primary_challenge}
+                onChange={set("primary_challenge")}
+              />
             </div>
           </div>
           <div className="field">
             <label htmlFor="d-msg">Anything else?</label>
-            <textarea id="d-msg" rows="3" value={form.message} onChange={set("message")} />
+            <textarea
+              id="d-msg"
+              rows="3"
+              value={form.message}
+              onChange={set("message")}
+            />
           </div>
 
           {status === "error" && (
-            <p className="alert alert--error">
-              Please check the highlighted fields and try again.
+            <p className="alert alert--error" role="alert">
+              {statusMessage}
             </p>
           )}
 
-          <button type="submit" className="btn btn--primary btn--lg" disabled={status === "loading"}>
-            {status === "loading" ? "Sending…" : "Book a Demo"} <span className="arrow">→</span>
+          <button
+            type="submit"
+            className="btn btn--primary btn--lg"
+            disabled={status === "loading"}
+          >
+            {status === "loading" ? "Sending…" : "Book a Demo"}{" "}
+            <span className="arrow">→</span>
           </button>
           <p className="form-note">
-            By submitting, you agree to be contacted about Encode Campus. We keep it short.
+            By submitting, you agree to be contacted about Encode Campus. We
+            keep it short.
           </p>
         </Reveal>
       </div>

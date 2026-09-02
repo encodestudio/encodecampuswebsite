@@ -1,4 +1,5 @@
 from collections import Counter
+import logging
 
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -31,6 +32,44 @@ from .serializers import (
     PricingPlanSerializer,
     SolutionSerializer,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def send_internal_email(subject, body, reply_to):
+    email = EmailMessage(
+        subject=subject,
+        body=body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=settings.CONTACT_FORM_TO,
+        cc=settings.CONTACT_FORM_CC,
+        reply_to=[reply_to],
+    )
+    return email.send(fail_silently=False)
+
+
+def send_customer_ack(to_email, subject, body):
+    email = EmailMessage(
+        subject=subject,
+        body=body,
+        from_email=settings.CUSTOMER_ACK_FROM,
+        to=[to_email],
+        reply_to=settings.CONTACT_FORM_TO,
+    )
+    return email.send(fail_silently=False)
+
+
+def send_form_notifications(request_id, internal_email, customer_ack):
+    failures = []
+    for label, email in (("internal", internal_email), ("customer acknowledgement", customer_ack)):
+        try:
+            if email() != 1:
+                failures.append(f"{label} email was not accepted by the email backend")
+        except Exception:
+            logger.exception("Failed to send %s email for form submission %s", label, request_id)
+            failures.append(f"{label} email could not be sent")
+    if failures:
+        raise RuntimeError("; ".join(failures))
 
 
 class FeatureViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -112,15 +151,33 @@ class DemoRequestCreateView(generics.CreateAPIView):
                 request_obj.message or "-",
             ]
         )
-        email = EmailMessage(
-            subject=f"Encode Campus demo request: {request_obj.organisation}",
-            body=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=settings.CONTACT_FORM_TO,
-            cc=settings.CONTACT_FORM_CC,
-            reply_to=[request_obj.email],
+        send_form_notifications(
+            request_obj.id,
+            lambda: send_internal_email(
+                subject=f"Encode Campus demo request: {request_obj.organisation}",
+                body=body,
+                reply_to=request_obj.email,
+            ),
+            lambda: send_customer_ack(
+                to_email=request_obj.email,
+                subject="We received your Encode Campus demo request",
+                body="\n".join(
+                    [
+                        f"Hi {request_obj.name},",
+                        "",
+                        "Thanks for requesting a walkthrough of Encode Campus.",
+                        "We have received your details and will get back to you shortly to schedule the demo.",
+                        "",
+                        f"Organisation: {request_obj.organisation}",
+                        f"Phone: {request_obj.phone}",
+                        "",
+                        "Regards,",
+                        "Shivam",
+                        "Encode Studio",
+                    ]
+                ),
+            ),
         )
-        email.send()
 
 
 class ContactMessageCreateView(generics.CreateAPIView):
@@ -146,15 +203,30 @@ class ContactMessageCreateView(generics.CreateAPIView):
                 message.message,
             ]
         )
-        email = EmailMessage(
-            subject=f"Encode Campus contact: {subject}",
-            body=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=settings.CONTACT_FORM_TO,
-            cc=settings.CONTACT_FORM_CC,
-            reply_to=[message.email],
+        send_form_notifications(
+            message.id,
+            lambda: send_internal_email(
+                subject=f"Encode Campus contact: {subject}",
+                body=body,
+                reply_to=message.email,
+            ),
+            lambda: send_customer_ack(
+                to_email=message.email,
+                subject="We received your Encode Campus message",
+                body="\n".join(
+                    [
+                        f"Hi {message.name},",
+                        "",
+                        "Thanks for contacting Encode Campus.",
+                        "We have received your message and will reply shortly.",
+                        "",
+                        "Regards,",
+                        "Shivam",
+                        "Encode Studio",
+                    ]
+                ),
+            ),
         )
-        email.send()
 
 
 class NewsletterSubscribeView(generics.CreateAPIView):
