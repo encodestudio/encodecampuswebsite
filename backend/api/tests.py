@@ -28,6 +28,11 @@ class DemoRequestApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+    @override_settings(
+        CONTACT_FORM_TO=["shivam@encodestudio.in"],
+        CONTACT_FORM_CC=["encodestudio.in@gmail.com"],
+        DEFAULT_FROM_EMAIL="web@encodecampus.encodestudio.in",
+    )
     def test_create_demo_request_and_segment(self):
         payload = {
             "name": "A Principal",
@@ -43,6 +48,13 @@ class DemoRequestApiTests(TestCase):
         self.assertEqual(res.status_code, 201)
         obj = DemoRequest.objects.get()
         self.assertEqual(obj.segment, "high_value")
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertEqual(sent.to, ["shivam@encodestudio.in"])
+        self.assertEqual(sent.cc, ["encodestudio.in@gmail.com"])
+        self.assertEqual(sent.reply_to, ["principal@example.com"])
+        self.assertIn("Test School", sent.subject)
+        self.assertIn("A Principal", sent.body)
 
     def test_calculate_endpoint(self):
         res = self.client.get(

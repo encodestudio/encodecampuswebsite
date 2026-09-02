@@ -86,6 +86,42 @@ class DemoRequestCreateView(generics.CreateAPIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "form-submit"
 
+    def perform_create(self, serializer):
+        request_obj = serializer.save()
+        institution_type = request_obj.get_institution_type_display()
+        body = "\n".join(
+            [
+                "New Encode Campus demo request",
+                "",
+                f"Name: {request_obj.name}",
+                f"Organisation: {request_obj.organisation}",
+                f"Designation: {request_obj.designation or '-'}",
+                f"Institution type: {institution_type}",
+                f"Student / learner strength: {request_obj.student_strength or '-'}",
+                f"City: {request_obj.city or '-'}",
+                f"Phone: {request_obj.phone}",
+                f"Email: {request_obj.email}",
+                f"Current system: {request_obj.current_system or '-'}",
+                f"Primary challenge: {request_obj.primary_challenge or '-'}",
+                f"Plan interest: {request_obj.plan_interest or '-'}",
+                f"Estimated monthly: {request_obj.estimated_monthly or '-'}",
+                f"Source: {request_obj.source}",
+                f"Segment: {request_obj.get_segment_display()}",
+                "",
+                "Message:",
+                request_obj.message or "-",
+            ]
+        )
+        email = EmailMessage(
+            subject=f"Encode Campus demo request: {request_obj.organisation}",
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=settings.CONTACT_FORM_TO,
+            cc=settings.CONTACT_FORM_CC,
+            reply_to=[request_obj.email],
+        )
+        email.send()
+
 
 class ContactMessageCreateView(generics.CreateAPIView):
     queryset = ContactMessage.objects.all()
