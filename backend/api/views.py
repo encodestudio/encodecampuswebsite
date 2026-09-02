@@ -1,5 +1,7 @@
 from collections import Counter
 
+from django.conf import settings
+from django.core.mail import EmailMessage
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import generics, mixins, status, viewsets
@@ -90,6 +92,33 @@ class ContactMessageCreateView(generics.CreateAPIView):
     serializer_class = ContactMessageSerializer
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "form-submit"
+
+    def perform_create(self, serializer):
+        message = serializer.save()
+        subject = message.subject or "Website contact form query"
+        body = "\n".join(
+            [
+                "New Encode Campus contact form query",
+                "",
+                f"Name: {message.name}",
+                f"Email: {message.email}",
+                f"Phone: {message.phone or '-'}",
+                f"Organisation: {message.organisation or '-'}",
+                f"Subject: {message.subject or '-'}",
+                "",
+                "Message:",
+                message.message,
+            ]
+        )
+        email = EmailMessage(
+            subject=f"Encode Campus contact: {subject}",
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=settings.CONTACT_FORM_TO,
+            cc=settings.CONTACT_FORM_CC,
+            reply_to=[message.email],
+        )
+        email.send()
 
 
 class NewsletterSubscribeView(generics.CreateAPIView):

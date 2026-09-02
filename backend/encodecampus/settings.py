@@ -115,6 +115,23 @@ CORS_ALLOWED_ORIGINS = env_list(
 )
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") or CORS_ALLOWED_ORIGINS
 
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "25"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False").lower() == "true"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() == "true"
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "web@encodecampus.encodestudio.in"
+)
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+CONTACT_FORM_TO = env_list("CONTACT_FORM_TO", "shivam@encodestudio.in")
+CONTACT_FORM_CC = env_list("CONTACT_FORM_CC", "encodestudio.in@gmail.com")
+
 # ---------------------------------------------------------------------------
 # Production hardening — active whenever DEBUG is off. The app runs behind
 # nginx which terminates TLS, so trust the forwarded-proto header.

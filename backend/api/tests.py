@@ -1,8 +1,9 @@
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from api import pricing
-from api.models import DemoRequest
+from api.models import ContactMessage, DemoRequest
 
 
 class PricingCalcTests(TestCase):
@@ -50,3 +51,35 @@ class DemoRequestApiTests(TestCase):
         )
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["monthly"], 3000.0)
+
+
+@override_settings(
+    CONTACT_FORM_TO=["shivam@encodestudio.in"],
+    CONTACT_FORM_CC=["encodestudio.in@gmail.com"],
+    DEFAULT_FROM_EMAIL="web@encodecampus.encodestudio.in",
+)
+class ContactMessageApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_create_contact_message_sends_email(self):
+        payload = {
+            "name": "Interested Admin",
+            "email": "admin@example.com",
+            "phone": "+91-88888-88888",
+            "organisation": "Example School",
+            "subject": "Pricing question",
+            "message": "Please share implementation details.",
+        }
+
+        res = self.client.post("/api/contact/", payload, format="json")
+
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(ContactMessage.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertEqual(sent.to, ["shivam@encodestudio.in"])
+        self.assertEqual(sent.cc, ["encodestudio.in@gmail.com"])
+        self.assertEqual(sent.reply_to, ["admin@example.com"])
+        self.assertIn("Pricing question", sent.subject)
+        self.assertIn("Please share implementation details.", sent.body)
